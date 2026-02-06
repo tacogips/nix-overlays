@@ -15,6 +15,11 @@ nix-overlays/
 ├── Taskfile.yml                     # go-task definitions for build verification
 ├── .claude/commands/                # Claude slash commands
 │   └── update-all-overlay-packages.md  # /update-all-overlay-packages
+├── .github/workflows/               # GitHub Actions
+│   ├── build.yml                    # CI build on push
+│   └── update-packages.yml         # Daily auto-update of overlay packages
+├── scripts/
+│   └── update-packages.sh          # Package update script (used by CI and locally)
 ├── claude-code/                     # claude-code package overlay (npm / buildNpmPackage)
 │   ├── package.nix
 │   └── package-lock.json
@@ -112,6 +117,20 @@ Use the Claude slash command `/user-update-all-overlay-packages` to update all p
 3. Update `version`, `hash` in `package.nix`
 4. Check and update git deps in `cargoLock.outputHashes` (see `.claude/commands/update-all-overlay-packages.md` for details)
 5. `git add`, build to verify
+
+## Automated Updates
+
+A daily GitHub Action (`.github/workflows/update-packages.yml`) runs at 09:00 UTC to check for new versions of all overlay packages. It runs `scripts/update-packages.sh`, which:
+
+1. Checks npm registry / GitHub releases for newer versions
+2. Prefetches source hashes
+3. Updates `package.nix` files (version, hash, npmDepsHash / outputHashes)
+4. Verifies builds with `nix build`
+5. Commits and pushes changes directly to main
+
+The workflow can also be triggered manually via `gh workflow run update-packages.yml`.
+
+To run the update script locally: `bash scripts/update-packages.sh` or `task update-packages`.
 
 ## Build Verification
 

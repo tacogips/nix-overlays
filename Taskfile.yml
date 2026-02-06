@@ -22,6 +22,11 @@ tasks:
     cmds:
       - nix flake check --no-build
 
+  update-packages:
+    desc: Run the package update script
+    cmds:
+      - bash scripts/update-packages.sh
+
   fmt:
     desc: Format nix files
     cmds:
