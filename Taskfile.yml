@@ -1,0 +1,28 @@
+version: '3'
+
+tasks:
+  build-claude-code:
+    desc: Build claude-code overlay package to verify it compiles
+    cmds:
+      - nix build .#claude-code --no-link --print-out-paths
+
+  build-codex:
+    desc: Build codex overlay package to verify it compiles
+    cmds:
+      - nix build .#codex --no-link --print-out-paths
+
+  build-all:
+    desc: Build all overlay packages
+    cmds:
+      - task: build-claude-code
+      - task: build-codex
+
+  check:
+    desc: Check flake configuration
+    cmds:
+      - nix flake check --no-build
+
+  fmt:
+    desc: Format nix files
+    cmds:
+      - nix fmt
