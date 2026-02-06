@@ -2,6 +2,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+UPDATE_PACKAGE="${UPDATE_PACKAGE:-all}"
+DRY_RUN="${DRY_RUN:-false}"
 
 log()  { echo "==> $*"; }
 err()  { echo "ERROR: $*" >&2; }
@@ -30,6 +32,11 @@ update_claude_code() {
 
   if [[ "$current" == "$latest" ]]; then
     log "  claude-code is already up to date"
+    return 0
+  fi
+
+  if [[ "$DRY_RUN" == "true" ]]; then
+    log "  [dry-run] claude-code would update $current -> $latest"
     return 0
   fi
 
@@ -117,6 +124,11 @@ update_codex() {
     return 0
   fi
 
+  if [[ "$DRY_RUN" == "true" ]]; then
+    log "  [dry-run] codex would update $current -> $latest"
+    return 0
+  fi
+
   log "  Updating codex $current -> $latest"
 
   # Prefetch source hash
@@ -201,11 +213,16 @@ update_codex() {
 # Main
 ###############################################################################
 main() {
-  log "Starting package updates..."
+  log "Starting package updates (package=$UPDATE_PACKAGE, dry-run=$DRY_RUN)..."
   local failed=0
 
-  update_claude_code || { err "claude-code update failed"; failed=1; }
-  update_codex       || { err "codex update failed"; failed=1; }
+  if [[ "$UPDATE_PACKAGE" == "all" || "$UPDATE_PACKAGE" == "claude-code" ]]; then
+    update_claude_code || { err "claude-code update failed"; failed=1; }
+  fi
+
+  if [[ "$UPDATE_PACKAGE" == "all" || "$UPDATE_PACKAGE" == "codex" ]]; then
+    update_codex || { err "codex update failed"; failed=1; }
+  fi
 
   if [[ $failed -ne 0 ]]; then
     log "Some packages failed to update"

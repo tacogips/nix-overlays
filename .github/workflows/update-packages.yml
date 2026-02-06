@@ -3,6 +3,21 @@ on:
   schedule:
     - cron: '0 9 * * *' # Daily 9:00 UTC
   workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package to update (all / claude-code / codex)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - claude-code
+          - codex
+      dry-run:
+        description: 'Dry run: check versions only, do not update or push'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -24,9 +39,13 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39 # v13
 
       - name: Run update script
+        env:
+          UPDATE_PACKAGE: ${{ inputs.package || 'all' }}
+          DRY_RUN: ${{ inputs.dry-run || 'false' }}
         run: bash scripts/update-packages.sh
 
       - name: Commit and push
+        if: inputs.dry-run != true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
