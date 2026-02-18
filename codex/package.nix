@@ -10,6 +10,7 @@
   libclang,
   makeBinaryWrapper,
   pkg-config,
+  libcap,
   openssl,
   ripgrep,
   versionCheckHook,
@@ -51,6 +52,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   buildInputs = [
     libclang
+    libcap
     openssl
   ];
 
