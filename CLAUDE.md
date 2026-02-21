@@ -6,6 +6,8 @@ This repository provides Nix overlays to override or add packages on top of nixp
 
 The primary use case is pinning packages to newer versions than what nixpkgs currently provides.
 
+**Note: Darwin (macOS) is not supported.** Rust compilation is too slow on Darwin, so this overlay targets Linux only (`x86_64-linux`, `aarch64-linux`).
+
 ## Directory Structure
 
 ```
@@ -38,7 +40,7 @@ Each overlay is a subdirectory containing a `package.nix`. The `flake.nix` expos
 
 ### Consumer Side (nixos repo)
 
-In `~/nix/nixos/linux/flake.nix` and `~/nix/nixos/darwin/flake.nix`:
+In `~/nix/nixos/linux/flake.nix`:
 
 ```nix
 inputs.nix-overlays.url = "github:tacogips/nix-overlays";
@@ -52,6 +54,8 @@ pkgs = import nixpkgs {
 ```
 
 This makes `pkgs.claude-code` and `pkgs.codex` resolve to the versions defined in this repo instead of the nixpkgs defaults.
+
+> Darwin (macOS) does not use this overlay. On Darwin, install these packages via other means (e.g., nixpkgs or homebrew).
 
 ## Development Shell
 

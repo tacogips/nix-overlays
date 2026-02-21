@@ -52,8 +52,10 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   buildInputs = [
     libclang
-    libcap
     openssl
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isLinux [
+    libcap
   ];
 
   env = {
