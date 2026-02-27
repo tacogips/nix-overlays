@@ -1,0 +1,2 @@
+{ zed-editor }:
+zed-editor
