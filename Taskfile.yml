@@ -11,11 +11,17 @@ tasks:
     cmds:
       - nix build .#codex --no-link --print-out-paths
 
+  build-zededitor:
+    desc: Build zededitor overlay package to verify it compiles
+    cmds:
+      - nix build .#zededitor --no-link --print-out-paths
+
   build-all:
     desc: Build all overlay packages
     cmds:
       - task: build-claude-code
       - task: build-codex
+      - task: build-zededitor
 
   check:
     desc: Check flake configuration

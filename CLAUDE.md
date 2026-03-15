@@ -27,6 +27,8 @@ nix-overlays/
 │   └── package-lock.json
 ├── codex/                           # codex package overlay (Rust / buildRustPackage)
 │   └── package.nix
+├── zededitor/                       # zededitor package overlay (upstream Linux binary)
+│   └── package.nix
 └── zig/                             # zig package (legacy, requires sources.json)
     └── default.nix
 ```
@@ -77,6 +79,13 @@ Uses `rustPlatform.buildRustPackage`. Requires:
 - `cargoLock` with `lockFile` pointing to `Cargo.lock` from source
 - `outputHashes` for any git dependencies (obtain via `nix-prefetch-git`)
 
+### binary packages (zededitor)
+
+Uses `fetchurl` to package the official Linux release tarballs. Requires:
+- `package.nix` with pinned `version`
+- architecture-specific tarball hashes for `x86_64-linux` and `aarch64-linux`
+- runtime patching via `autoPatchelfHook`
+
 ## Adding a New Overlay
 
 1. Create a directory: `mkdir new-package/`
@@ -122,6 +131,17 @@ Use the Claude slash command `/user-update-all-overlay-packages` to update all p
 4. Check and update git deps in `cargoLock.outputHashes` (see `.claude/commands/update-all-overlay-packages.md` for details)
 5. `git add`, build to verify
 
+### Updating zededitor (upstream binary)
+
+1. Check latest: `curl -s https://api.github.com/repos/zed-industries/zed/releases/latest | jq -r .tag_name`
+2. Prefetch Linux tarball hashes:
+   ```sh
+   nix store prefetch-file --json https://github.com/zed-industries/zed/releases/download/v<VERSION>/zed-linux-x86_64.tar.gz | jq -r .hash
+   nix store prefetch-file --json https://github.com/zed-industries/zed/releases/download/v<VERSION>/zed-linux-aarch64.tar.gz | jq -r .hash
+   ```
+3. Update `version`, `x86_64Hash`, `aarch64Hash` in `zededitor/package.nix`
+4. `nix build .#zededitor --no-link --print-out-paths`
+
 ## Automated Updates
 
 A daily GitHub Action (`.github/workflows/update-packages.yml`) runs at 09:00 UTC to check for new versions of all overlay packages. It runs `scripts/update-packages.sh`, which:
@@ -141,6 +161,7 @@ To run the update script locally: `bash scripts/update-packages.sh` or `task upd
 ```sh
 task build-claude-code   # Build claude-code
 task build-codex         # Build codex
+task build-zededitor     # Build zededitor
 task build-all           # Build all packages
 task check               # Check flake configuration
 task fmt                 # Format nix files
