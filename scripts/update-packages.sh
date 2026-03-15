@@ -108,10 +108,11 @@ update_codex() {
   current=$(grep -oP 'version = "\K[^"]+' "$pkg_nix" | head -1)
   log "  current version: $current"
 
-  # Latest release tag matching rust-vX.Y.Z (no alpha/beta)
+  # Latest stable release tag matching rust-vX.Y.Z
   local latest_tag latest
-  latest_tag=$(curl -sf "https://api.github.com/repos/openai/codex/releases?per_page=20" \
-    | jq -r '.[].tag_name' | grep '^rust-v[0-9]' | grep -v alpha | grep -v beta | head -1)
+  latest_tag=$(curl -sf "https://api.github.com/repos/openai/codex/releases?per_page=100" \
+    | jq -r '.[] | select((.prerelease | not) and (.draft | not)) | .tag_name' \
+    | grep '^rust-v[0-9]' | head -1)
   if [[ -z "$latest_tag" ]]; then
     err "Failed to fetch latest codex release tag"
     return 1
@@ -171,9 +172,8 @@ update_codex() {
     while IFS=' ' read -r dep_name dep_ver dep_url dep_rev; do
       log "  Prefetching git dep: $dep_name-$dep_ver ($dep_rev)"
       local dep_raw_hash dep_sri_hash
-      dep_raw_hash=$(nix shell nixpkgs#nix-prefetch-git nixpkgs#jq -c \
-        "nix-prefetch-git --quiet --rev '$dep_rev' '$dep_url'" 2>/dev/null \
-        | jq -r '.sha256')
+      dep_raw_hash=$(nix shell nixpkgs#nix-prefetch-git nixpkgs#jq --command bash -lc \
+        "nix-prefetch-git --quiet --rev '$dep_rev' '$dep_url' | jq -r '.sha256'" 2>/dev/null)
       dep_sri_hash=$(nix hash to-sri --type sha256 "$dep_raw_hash")
       output_hashes_body+="      \"${dep_name}-${dep_ver}\" = \"${dep_sri_hash}\";"$'\n'
     done <<< "$git_deps"
