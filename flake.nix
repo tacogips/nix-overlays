@@ -29,7 +29,7 @@
           packages = {
             claude-code = pkgs.callPackage ./claude-code/package.nix { };
             codex = pkgs.callPackage ./codex/package.nix { };
-            zededitor = pkgs.callPackage ./zededitor/package.nix { };
+            # zededitor = pkgs.callPackage ./zededitor/package.nix { };
           };
 
           devShells.default = pkgs.mkShell {
@@ -55,9 +55,9 @@
         codex = final: prev: {
           codex = final.callPackage ./codex/package.nix { };
         };
-        zededitor = final: prev: {
-          zededitor = final.callPackage ./zededitor/package.nix { };
-        };
+        # zededitor = final: prev: {
+        #   zededitor = final.callPackage ./zededitor/package.nix { };
+        # };
       };
     };
 }

@@ -209,63 +209,64 @@ update_codex() {
   return 0
 }
 
-###############################################################################
+# ##############################################################################
 # zededitor (upstream Linux binary)
-###############################################################################
-update_zededitor() {
-  log "Checking zededitor..."
-  local pkg_nix="$REPO_ROOT/zededitor/package.nix"
-
-  local current
-  current=$(grep -oP 'version = "\K[^"]+' "$pkg_nix" | head -1)
-  log "  current version: $current"
-
-  local latest_tag latest
-  latest_tag=$(curl -sf https://api.github.com/repos/zed-industries/zed/releases/latest | jq -r .tag_name)
-  if [[ -z "$latest_tag" || "$latest_tag" == "null" ]]; then
-    err "Failed to fetch latest zed release tag"
-    return 1
-  fi
-  latest="${latest_tag#v}"
-  log "  latest  version: $latest"
-
-  if [[ "$current" == "$latest" ]]; then
-    log "  zededitor is already up to date"
-    return 0
-  fi
-
-  if [[ "$DRY_RUN" == "true" ]]; then
-    log "  [dry-run] zededitor would update $current -> $latest"
-    return 0
-  fi
-
-  log "  Updating zededitor $current -> $latest"
-
-  local x86_sri_hash aarch64_sri_hash
-  x86_sri_hash=$(nix store prefetch-file --json \
-    "https://github.com/zed-industries/zed/releases/download/v${latest}/zed-linux-x86_64.tar.gz" \
-    | jq -r .hash)
-  log "  x86_64 hash: $x86_sri_hash"
-
-  aarch64_sri_hash=$(nix store prefetch-file --json \
-    "https://github.com/zed-industries/zed/releases/download/v${latest}/zed-linux-aarch64.tar.gz" \
-    | jq -r .hash)
-  log "  aarch64 hash: $aarch64_sri_hash"
-
-  sed -i "s/version = \"[^\"]*\";/version = \"${latest}\";/" "$pkg_nix"
-  sed -i "s|x86_64Hash = \"sha256-[^\"]*\";|x86_64Hash = \"${x86_sri_hash}\";|" "$pkg_nix"
-  sed -i "s|aarch64Hash = \"sha256-[^\"]*\";|aarch64Hash = \"${aarch64_sri_hash}\";|" "$pkg_nix"
-
-  log "  Verifying build..."
-  if ! nix build "$REPO_ROOT#zededitor" --no-link --print-out-paths; then
-    err "zededitor build failed"
-    git -C "$REPO_ROOT" checkout -- zededitor/
-    return 1
-  fi
-
-  log "  zededitor updated to $latest"
-  return 0
-}
+# Commented out for now.
+# ##############################################################################
+# update_zededitor() {
+#   log "Checking zededitor..."
+#   local pkg_nix="$REPO_ROOT/zededitor/package.nix"
+#
+#   local current
+#   current=$(grep -oP 'version = "\K[^"]+' "$pkg_nix" | head -1)
+#   log "  current version: $current"
+#
+#   local latest_tag latest
+#   latest_tag=$(curl -sf https://api.github.com/repos/zed-industries/zed/releases/latest | jq -r .tag_name)
+#   if [[ -z "$latest_tag" || "$latest_tag" == "null" ]]; then
+#     err "Failed to fetch latest zed release tag"
+#     return 1
+#   fi
+#   latest="${latest_tag#v}"
+#   log "  latest  version: $latest"
+#
+#   if [[ "$current" == "$latest" ]]; then
+#     log "  zededitor is already up to date"
+#     return 0
+#   fi
+#
+#   if [[ "$DRY_RUN" == "true" ]]; then
+#     log "  [dry-run] zededitor would update $current -> $latest"
+#     return 0
+#   fi
+#
+#   log "  Updating zededitor $current -> $latest"
+#
+#   local x86_sri_hash aarch64_sri_hash
+#   x86_sri_hash=$(nix store prefetch-file --json \
+#     "https://github.com/zed-industries/zed/releases/download/v${latest}/zed-linux-x86_64.tar.gz" \
+#     | jq -r .hash)
+#   log "  x86_64 hash: $x86_sri_hash"
+#
+#   aarch64_sri_hash=$(nix store prefetch-file --json \
+#     "https://github.com/zed-industries/zed/releases/download/v${latest}/zed-linux-aarch64.tar.gz" \
+#     | jq -r .hash)
+#   log "  aarch64 hash: $aarch64_sri_hash"
+#
+#   sed -i "s/version = \"[^\"]*\";/version = \"${latest}\";/" "$pkg_nix"
+#   sed -i "s|x86_64Hash = \"sha256-[^\"]*\";|x86_64Hash = \"${x86_sri_hash}\";|" "$pkg_nix"
+#   sed -i "s|aarch64Hash = \"sha256-[^\"]*\";|aarch64Hash = \"${aarch64_sri_hash}\";|" "$pkg_nix"
+#
+#   log "  Verifying build..."
+#   if ! nix build "$REPO_ROOT#zededitor" --no-link --print-out-paths; then
+#     err "zededitor build failed"
+#     git -C "$REPO_ROOT" checkout -- zededitor/
+#     return 1
+#   fi
+#
+#   log "  zededitor updated to $latest"
+#   return 0
+# }
 
 ###############################################################################
 # Main
@@ -282,9 +283,9 @@ main() {
     update_codex || { err "codex update failed"; failed=1; }
   fi
 
-  if [[ "$UPDATE_PACKAGE" == "all" || "$UPDATE_PACKAGE" == "zededitor" ]]; then
-    update_zededitor || { err "zededitor update failed"; failed=1; }
-  fi
+  # if [[ "$UPDATE_PACKAGE" == "all" || "$UPDATE_PACKAGE" == "zededitor" ]]; then
+  #   update_zededitor || { err "zededitor update failed"; failed=1; }
+  # fi
 
   if [[ $failed -ne 0 ]]; then
     log "Some packages failed to update"
