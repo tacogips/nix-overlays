@@ -1,7 +1,7 @@
 {
   description = "nix overlays";
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:tacogips/nixpkgs-security/4a5495d1c0a7c62200b55deeeecb64f03b093056";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
