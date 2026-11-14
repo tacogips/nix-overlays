@@ -1,0 +1,103 @@
+{
+  lib,
+  stdenv,
+  rustPlatform,
+  fetchFromGitHub,
+  installShellFiles,
+  clang,
+  cmake,
+  gitMinimal,
+  libclang,
+  makeBinaryWrapper,
+  pkg-config,
+  libcap,
+  openssl,
+  ripgrep,
+  versionCheckHook,
+  installShellCompletions ? stdenv.buildPlatform.canExecute stdenv.hostPlatform,
+}:
+rustPlatform.buildRustPackage (finalAttrs: {
+  pname = "codex";
+  version = "0.116.0";
+
+  src = fetchFromGitHub {
+    owner = "openai";
+    repo = "codex";
+    tag = "rust-v${finalAttrs.version}";
+    hash = "sha256-PTsKphg3gPlBUs5oMM34RhJJ4jxvD6hand5aVjXcuZ4=";
+  };
+
+  sourceRoot = "${finalAttrs.src.name}/codex-rs";
+
+  cargoLock = {
+    lockFile = ./Cargo.lock;
+    outputHashes = {
+      "crossterm-0.28.1" = "sha256-6qCtfSMuXACKFb9ATID39XyFDIEMFDmbx6SSmNe+728=";
+      "nucleo-0.5.0" = "sha256-Hm4SxtTSBrcWpXrtSqeO0TACbUxq3gizg1zD/6Yw/sI=";
+      "nucleo-matcher-0.3.1" = "sha256-Hm4SxtTSBrcWpXrtSqeO0TACbUxq3gizg1zD/6Yw/sI=";
+      "ratatui-0.29.0" = "sha256-HBvT5c8GsiCxMffNjJGLmHnvG77A6cqEL+1ARurBXho=";
+      "runfiles-0.1.0" = "sha256-uJpVLcQh8wWZA3GPv9D8Nt43EOirajfDJ7eq/FB+tek=";
+      "tokio-tungstenite-0.28.0" = "sha256-hJAkvWxDjB9A9GqansahWhTmj/ekcelslLUTtwqI7lw=";
+      "tungstenite-0.27.0" = "sha256-AN5wql2X2yJnQ7lnDxpljNw0Jua40GtmT+w3wjER010=";
+    };
+  };
+
+  # Keep the build and vendoring phases on the security-updated resolution.
+  postPatch = ''
+    cp ${./Cargo.lock} Cargo.lock
+  '';
+
+  nativeBuildInputs = [
+    clang
+    cmake
+    gitMinimal
+    installShellFiles
+    makeBinaryWrapper
+    pkg-config
+  ];
+
+  buildInputs = [
+    libclang
+    openssl
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isLinux [
+    libcap
+  ];
+
+  env = {
+    LIBCLANG_PATH = "${lib.getLib libclang}/lib";
+    NIX_CFLAGS_COMPILE = toString (
+      lib.optionals stdenv.cc.isGNU [
+        "-Wno-error=stringop-overflow"
+      ]
+      ++ lib.optionals stdenv.cc.isClang [
+        "-Wno-error=character-conversion"
+      ]
+    );
+  };
+
+  doCheck = false;
+
+  postInstall = lib.optionalString installShellCompletions ''
+    installShellCompletion --cmd codex \
+      --bash <($out/bin/codex completion bash) \
+      --fish <($out/bin/codex completion fish) \
+      --zsh <($out/bin/codex completion zsh)
+  '';
+
+  postFixup = ''
+    wrapProgram $out/bin/codex --prefix PATH : ${lib.makeBinPath [ ripgrep ]}
+  '';
+
+  doInstallCheck = true;
+  nativeInstallCheckInputs = [ versionCheckHook ];
+
+  meta = {
+    description = "Lightweight coding agent that runs in your terminal";
+    homepage = "https://github.com/openai/codex";
+    changelog = "https://raw.githubusercontent.com/openai/codex/refs/tags/rust-v${finalAttrs.version}/CHANGELOG.md";
+    license = lib.licenses.asl20;
+    mainProgram = "codex";
+    platforms = lib.platforms.unix;
+  };
+})
